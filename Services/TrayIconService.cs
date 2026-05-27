@@ -183,6 +183,10 @@ public sealed class TrayIconService : IDisposable
 
         strip.Items.Add("Exit", null, (_, _) => _handler(ContextMenuAction.Exit));
 
+        // Re-register icons after the context menu closes — WinForms' message pump
+        // can drop the GPU icon's shell registration when the menu is shown/hidden.
+        strip.Closed += (_, _) => ReregisterIcons();
+
         return strip;
     }
 

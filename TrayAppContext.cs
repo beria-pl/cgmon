@@ -5,6 +5,8 @@ namespace cgmon;
 
 public sealed class TrayAppContext : ApplicationContext
 {
+    private static readonly TimeSpan HistorySpan = TimeSpan.FromMinutes(10);
+
     private readonly SettingsService        _settingsSvc;
     private readonly HardwareMonitorService _hardware;
     private readonly TrayIconService        _tray;
@@ -16,7 +18,8 @@ public sealed class TrayAppContext : ApplicationContext
     private readonly SynchronizationContext _sync;
     private TemperatureSnapshot?      _lastSnap;
     private bool                      _paused;
-    private DetailsForm?              _details;
+    private GraphForm?                _details;
+    private readonly List<TempPoint>  _tempHistory = [];
 
     public event EventHandler<TemperatureSnapshot>? SnapshotUpdated;
 
@@ -66,6 +69,12 @@ public sealed class TrayAppContext : ApplicationContext
                 _tray.Update(snap, _settings);
                 SnapshotUpdated?.Invoke(this, snap);
                 MaybeShowAdminHint(snap);
+
+                _tempHistory.Add(new TempPoint(snap.Timestamp, snap.CpuTemperature, snap.GpuTemperature));
+                var cutoff = snap.Timestamp - HistorySpan;
+                int i = 0;
+                while (i < _tempHistory.Count && _tempHistory[i].Time < cutoff) i++;
+                if (i > 0) _tempHistory.RemoveRange(0, i);
             }, null);
         }
         catch (Exception ex)
@@ -133,7 +142,7 @@ public sealed class TrayAppContext : ApplicationContext
             return;
         }
 
-        var form = new DetailsForm();
+        var form = new GraphForm(new List<TempPoint>(_tempHistory));
         _details = form;
 
         void OnClosed(object? s, FormClosedEventArgs e)
@@ -147,7 +156,6 @@ public sealed class TrayAppContext : ApplicationContext
         form.FormClosed += OnClosed;
         SnapshotUpdated += form.OnSnapshotUpdated;
 
-        if (_lastSnap != null) form.OnSnapshotUpdated(this, _lastSnap);
         form.Show();
     }
 
