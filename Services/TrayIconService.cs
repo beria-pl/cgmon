@@ -18,10 +18,34 @@ public sealed class TrayIconService : IDisposable
     private ContextMenuStrip? _menu;
     private ToolStripMenuItem? _pauseItem;
     private ToolStripMenuItem? _startupItem;
+    private TaskbarRestartWindow? _restartWindow;
 
     private float? _prevCpuTemp;
     private float? _prevGpuTemp;
     private bool   _disposed;
+
+    // Re-registers icons when Explorer restarts and sends WM_TASKBARCREATED.
+    private sealed class TaskbarRestartWindow : NativeWindow, IDisposable
+    {
+        private static readonly uint WmTaskbarCreated =
+            NativeMethods.RegisterWindowMessage("TaskbarCreated");
+
+        private readonly Action _onRestart;
+
+        internal TaskbarRestartWindow(Action onRestart)
+        {
+            _onRestart = onRestart;
+            CreateHandle(new CreateParams());
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if ((uint)m.Msg == WmTaskbarCreated) _onRestart();
+            base.WndProc(ref m);
+        }
+
+        public void Dispose() => DestroyHandle();
+    }
 
     private readonly Action<ContextMenuAction> _handler;
 
@@ -38,13 +62,23 @@ public sealed class TrayIconService : IDisposable
         _cpuIcon.DoubleClick += (_, _) => _handler(ContextMenuAction.OpenDetails);
         ApplyCpuIcon("C--", TemperatureLevel.Normal, "CPU: -- | --:--:--");
         _cpuIcon.Visible = true;
+
+        _restartWindow = new TaskbarRestartWindow(ReregisterIcons);
+    }
+
+    private void ReregisterIcons()
+    {
+        // Toggle Visible to force Shell_NotifyIcon(NIM_ADD) for both icons.
+        if (_cpuIcon != null) { _cpuIcon.Visible = false; _cpuIcon.Visible = true; }
+        if (_gpuIcon != null) { _gpuIcon.Visible = false; _gpuIcon.Visible = true; }
     }
 
     public void Update(TemperatureSnapshot snap, AppSettings s)
     {
         if (_disposed) return;
         UpdateCpu(snap, s);
-        if (snap.HasGpu) UpdateGpu(snap, s);
+        // Also update if the GPU icon was already created — don't let it go stale/silent.
+        if (snap.HasGpu || _gpuIcon != null) UpdateGpu(snap, s);
     }
 
     private void UpdateCpu(TemperatureSnapshot snap, AppSettings s)
@@ -182,6 +216,8 @@ public sealed class TrayIconService : IDisposable
         if (_disposed) return;
         _disposed = true;
 
+        _restartWindow?.Dispose();
+        _restartWindow = null;
         DisposeNotifyIcon(ref _cpuIcon);
         DisposeNotifyIcon(ref _gpuIcon);
         _menu?.Dispose();

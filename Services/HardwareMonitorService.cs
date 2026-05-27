@@ -9,6 +9,7 @@ public sealed class HardwareMonitorService : IDisposable
     private float? _lastValidCpuTemp;
     private float? _lastValidGpuTemp;
     private bool _diagnosticLogged;
+    private bool _gpuEverDetected;
 
     public void Initialize()
     {
@@ -104,6 +105,7 @@ public sealed class HardwareMonitorService : IDisposable
 
             if (cpuFound) _lastValidCpuTemp = cpuTemp;
             if (gpuFound) _lastValidGpuTemp = gpuTemp;
+            if (hasGpu)   _gpuEverDetected  = true;
 
             // One-time diagnostic: log what the library actually sees so we can diagnose
             // "no CPU temp" without needing a debugger attached.
@@ -117,7 +119,7 @@ public sealed class HardwareMonitorService : IDisposable
             {
                 CpuTemperature = cpuFound  ? cpuTemp : _lastValidCpuTemp,
                 GpuTemperature = gpuFound  ? gpuTemp : _lastValidGpuTemp,
-                HasGpu         = hasGpu,
+                HasGpu         = _gpuEverDetected,
                 CpuReadFailed  = !cpuFound,
                 GpuReadFailed  = hasGpu && !gpuFound,
                 Timestamp      = now,
