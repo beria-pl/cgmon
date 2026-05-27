@@ -13,8 +13,8 @@
     <Authors>Piotr Berent</Authors>
     <Company>Piotr Berent</Company>
     <Copyright>Copyright © 2025 Piotr Berent</Copyright>
-    <Version>1.1.0</Version>
-    <FileVersion>1.1.0.0</FileVersion>
+    <Version>1.1.1</Version>
+    <FileVersion>1.1.1.0</FileVersion>
     <Optimize>true</Optimize>
     <Platforms>x64;x86</Platforms>
   </PropertyGroup>

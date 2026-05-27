@@ -73,6 +73,10 @@ public sealed class TrayIconService : IDisposable
         if (_gpuIcon != null) { _gpuIcon.Visible = false; _gpuIcon.Visible = true; }
     }
 
+    // Call after any modal dialog or secondary window closes — WinForms' modal
+    // loop can invalidate the shell registration of lazily-created NotifyIcons.
+    public void ReregisterAfterDialog() => ReregisterIcons();
+
     public void Update(TemperatureSnapshot snap, AppSettings s)
     {
         if (_disposed) return;

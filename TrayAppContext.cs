@@ -140,6 +140,8 @@ public sealed class TrayAppContext : ApplicationContext
         {
             SnapshotUpdated -= form.OnSnapshotUpdated;
             form.FormClosed -= OnClosed;
+            // Re-register both icons in case the window closing dropped the GPU icon's shell registration.
+            _tray.ReregisterAfterDialog();
         }
 
         form.FormClosed += OnClosed;
@@ -158,6 +160,8 @@ public sealed class TrayAppContext : ApplicationContext
             _settingsSvc.Save(_settings);
             RestartLoop();
         }
+        // Re-register both icons — the modal loop can drop the GPU icon's shell registration.
+        _tray.ReregisterAfterDialog();
     }
 
     private void RestartLoop()
