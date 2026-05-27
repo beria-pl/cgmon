@@ -136,23 +136,6 @@ UI/
 
 ---
 
-## Releases
-
-Pre-built single-file executables are attached to every [GitHub Release](../../releases). Download the latest `cgmon-vX.Y.Z-win-x64.zip`, extract, and run `cgmon.exe` — no .NET runtime installation required.
-
-> **Note:** Windows SmartScreen may show an "Unknown publisher" warning on first launch because the binary is not code-signed. Click **More info → Run anyway** to proceed. This is normal for open-source tools distributed without a commercial code-signing certificate.
-
-To publish a new release, push a version tag:
-
-```powershell
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-GitHub Actions will build and attach the zip automatically.
-
----
-
 ## Third-party licence
 
 This project uses **LibreHardwareMonitorLib** from [LibreHardwareMonitor/LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor), licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
